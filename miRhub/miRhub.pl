@@ -35,9 +35,11 @@ $Name0=shift;
 $ITER=shift;
 $species=shift;
 $CONS=shift;
-$NET =0; 
+$NET =1; 
+$NET=shift if ($nArgs>=7);
+$SIXMER=shift;
 $ALPHA=3;
-
+$ALPHA=shift if ($nArgs == 10); 
 print "miRNA list: $mirlist\n";
 print "geneList: $list\n";
 print "Protein interactions: $PPI\n";
@@ -45,11 +47,17 @@ print "Output: $Name0\n";
 print "# Random simulations: $ITER\n";
 print "Required conservation: Human + $CONS others\n";
 print "Mode: ";
-print "gene list\n";
+if ($NET==1) {
+   print "gene network\n";
+}
+else {
+   print "gene list\n";
+}
+print "6mers included: $SIXMER";
 
 
 #$miRConLev='betamiR_cons_leve2.txt';
-$miRConLev='/home/pr46_0001/shared/lib/python3.6/miRhub/miR_family_conservation.txt';
+$miRConLev='miRhub/miR_family_conservation.txt';
 open (MIR,$miRConLev)  or die;
 while (<MIR>) {
    chomp();
@@ -71,13 +79,13 @@ while (<MIR>) {
 }
 close(MIR);
 if ($species==9606) {
-   $ScoreCard='/home/pr46_0001/shared/lib/python3.6/miRhub/scorecard_HSA.txt';
+   $ScoreCard='miRhub/scorecard_HSA.txt';
 }
 elsif ($species==10116) {
-   $ScoreCard='/home/pr46_0001/shared/lib/python3.6/miRhub/scorecard_RNO.txt';
+   $ScoreCard='miRhub/scorecard_RNO.txt';
 }
 else {
-   $ScoreCard='/home/pr46_0001/shared/lib/python3.6/miRhub/scorecard_MMU.txt';
+   $ScoreCard='miRhub/scorecard_MMU.txt';
 }
 
 $info=`date`;
@@ -94,7 +102,7 @@ while (<SC>) {
    chomp();
    
    my($gene,$transcript,$utrLen,$miRgroup,$type,$pos,$cons) = split(/\t/,$_);
-   if ($type eq '6mer') {
+   if ($SIXMER eq "NoSixmer" & $type eq '6mer') {
        $six_c ++;
        next;
       }
@@ -107,6 +115,9 @@ while (<SC>) {
       }
       elsif ($type eq '7mer-1a') { 
 	 $score = 1;
+      }
+      elsif ($type eq '6mer') {
+         $score = 0.75
       }
       else {
           print "Not recognize binding site type: $type\n"
@@ -137,6 +148,7 @@ while (<SC>) {
       $gutrLen{$gene} = $utrLen ;
    }
 }
+print "\nThis many 6mer sites were skipped: $six_c\n";
 close(SC);
 
 #Cluster miRNA target scores by position within the UTR
